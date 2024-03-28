@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Page</title>
+</head>
+<body>
+    <div id="user-area">
+        <h2>User Area</h2>
+        <p>Welcome, <span id="user-name">[User_Name]</span>!</p>
+    </div>
+
+    <div id="subscription-area">
+        <h2>Subscription Area</h2>
+        <!-- Dynamically populated subscription list will go here -->
+        <!-- Example subscription item -->
+        <!-- This should be generated based on actual data -->
+        <div class="subscription-item">
+            <p>Title: [Title]</p>
+            <p>Artist: [Artist]</p>
+            <p>Year: [Year]</p>
+            <img src="[path_to_artist_image_from_S3]" alt="Artist Image">
+            <button class="remove-subscription">Remove</button>
+        </div>
+    </div>
+
+    <div id="query-area">
+        <h2>Query Area</h2>
+        <form id="query-form">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title">
+            <br><br>
+            <label for="year">Year:</label>
+            <input type="text" id="year" name="year">
+            <br><br>
+            <label for="artist">Artist:</label>
+            <input type="text" id="artist" name="artist">
+            <br><br>
+            <button type="submit">Query</button>
+        </form>
+        <div id="query-results-area"></div>
+    </div>
+    <script src="{{ url_for('static', filename='page_helper.js') }}"></script>
+    <a href="/logout">Logout</a>
+</body>
+</html>

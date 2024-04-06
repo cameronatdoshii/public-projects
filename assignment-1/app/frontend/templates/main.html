@@ -8,26 +8,28 @@
 <body>
     <div id="user-area">
         <h2>User Area</h2>
-        <p>Welcome, <span id="user-name">[User_Name]</span>!</p>
+        <p>Welcome, <span id="user-name">{{ user['user_name'] }}</span>!</p>
     </div>
 
     <div id="subscription-area">
         <h2>Subscription Area</h2>
-        <!-- Dynamically populated subscription list will go here -->
-        <!-- Example subscription item -->
-        <!-- This should be generated based on actual data -->
-        <div class="subscription-item">
-            <p>Title: [Title]</p>
-            <p>Artist: [Artist]</p>
-            <p>Year: [Year]</p>
-            <img src="[path_to_artist_image_from_S3]" alt="Artist Image">
-            <button class="remove-subscription">Remove</button>
-        </div>
-    </div>
+        {% for music in subscriptions['subbed_music'] %}
+            <div class="subscription-item" id="item-{{ loop.index }}">
+                <p>Title: {{ music['Title'] }}</p>
+                <p>Artist: {{ music['Artist'] }}</p>
+                <p>Year: {{ music['Year'] }}</p>
+                <img src="{{ music['ImagePath'] }}" alt="Artist Image">
+                <button class="remove-subscription" data-index="{{ loop.index }}">Remove</button>
+            </div>
+        {% else %}
+            <p>No subscriptions found.</p>
+        {% endfor %}
+    </div>    
 
     <div id="query-area">
         <h2>Query Area</h2>
         <form id="query-form">
+            <input type="hidden" id="email" name="email" value="{{ user['email'] }}">
             <label for="title">Title:</label>
             <input type="text" id="title" name="title">
             <br><br>

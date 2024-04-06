@@ -1,6 +1,7 @@
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 import logging
+import ast
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -16,8 +17,8 @@ class dynamo_helper:
         response = table.get_item(Key={'email': email})
 
         if 'Item' in response and response['Item'].get('password') == password:
-            return True, "Login Successful"
-        return False, "Email or Password is Invalid"
+            return True, "Login Successful", response['Item']['user_name']
+        return False, "Email or Password is Invalid", None
     
     def add_user(self, email, user_name, password, table_name):
         table = self.dynamodb.Table(table_name)
@@ -27,7 +28,7 @@ class dynamo_helper:
             return False, {'error': 'the email already exists'}
 
         try:
-            response = table.put_item(Item={'email': email, 'user_name': user_name, 'password': password})
+            response = table.put_item(Item={'email': email, 'user_name': user_name, 'password': password, 'subbed_music': '[]'})
             return True, {'success': 'user added successfully'}
         except Exception as e:
             return False, {'error': str(e)}
@@ -65,6 +66,54 @@ class dynamo_helper:
             
             return str(e)
         
+    def remove_subbed_music(self, title, artist, year, email):
+        table = self.dynamodb.Table('login')
+        response = table.get_item(Key={'email': email})
+        logger.info(f"Response: {response}")
+        current_music = ast.literal_eval(response['Item']['subbed_music'])
+        current_music = [m for m in current_music if m['Title'] != title and m['Artist'] != artist and m['Year'] != year]
+        response = table.update_item(
+            Key={'email': email},
+            UpdateExpression='SET subbed_music = :val1',
+            ExpressionAttributeValues={':val1': str(current_music)}
+        )
+        return current_music
+        
+    def get_subbed_music(self, email):
+        table = self.dynamodb.Table('login')
+        response = table.get_item(Key={'email': email})
+        logger.info(f"Response: {response}")
+        return ast.literal_eval(response['Item']['subbed_music'])
+        
+    def add_subbed_music(self, new_subbed, email):
+        
+        logger.info(f"Adding subbed music: {new_subbed} for email: {email}")
+        
+        try:
+            table = self.dynamodb.Table('login')
+            current_results = table.get_item(Key={'email': email})
+            current_music = current_results['Item']['subbed_music']
+            current_music = ast.literal_eval(current_music)
+            new_music = new_subbed['subbed_music']
+            
+            # Convert list of dictionaries to a list of tuples for comparison
+            existing_music_set = {tuple(music.items()) for music in current_music}
+
+            # Add new music if it's not already in the set
+            for music in new_music:
+                if tuple(music.items()) not in existing_music_set:
+                    current_music.append(music)
+
+            response = table.update_item(
+                Key={'email': email},
+                UpdateExpression='SET subbed_music = :val1',
+                ExpressionAttributeValues={':val1': str(current_music)}
+            )
+            return current_music
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            return False, {'error': str(e)}
+
 
 
 
@@ -78,6 +127,9 @@ class dynamo_helper:
 #     helper.query_music(artist='Sublime', year='1996')
 #     helper.query_music(title='40oz to Freedom', artist='Sublime', year='1996')
 #     helper.query_music(title='40oz to Freedom', artist='Sublime', year='1995')
-    
+#     helper.add_subbed_music({'subbed_music': [{'Title': 'Darkness Between the Fireflies', 'Artist': 'Mason Jennings', 'Year': '1997', 'ImagePath': 'https://raw.githubusercontent.com/davidpots/songnotes_cms/master/public/images/artists/MasonJennings.jpg'}, {'Title': 'Nothing', 'Artist': 'Mason Jennings', 'Year': '1997', 'ImagePath': 'https://raw.githubusercontent.com/davidpots/songnotes_cms/master/public/images/artists/MasonJennings.jpg'}, {'Title': 'Karma Police', 'Artist': 'Radiohead', 'Year': '1997', 'ImagePath': 'https://raw.githubusercontent.com/davidpots/songnotes_cms/master/public/images/artists/Radiohead.jpg'}, {'Title': 'No Surprises', 'Artist': 'Radiohead', 'Year': '1997', 'ImagePath': 'https://raw.githubusercontent.com/davidpots/songnotes_cms/master/public/images/artists/Radiohead.jpg'}]}, "cameron@thegilmours.co.za")
+#   helper.get_subbed_music("cameron@thegilmours.co.za")
+
+
 # if __name__ == '__main__':
 #     main()

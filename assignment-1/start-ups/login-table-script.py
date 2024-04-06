@@ -76,7 +76,8 @@ def load_data(table_name):
     data = {
         'email': None,
         'user_name': None,
-        'password': None
+        'password': None,
+        'subbed_music': '[]'
     }
 
     for i in range(0, 9):
@@ -84,6 +85,7 @@ def load_data(table_name):
         data['email'] = email
         data['user_name'] = user_name + str(i)
         data['password'] = password + str(i)
+        data['subbed_music'] = '[]'
         try:
             table.put_item(Item=data)
             logger.info(f"Data loaded successfully for {email}")

@@ -18,7 +18,12 @@ dynamo_helper_instance = dynamo_helper()
 
 subscriptions = {
     "subbed_music": []
-} 
+}
+
+user = {
+    "email": "",
+    "user_name": "",
+}
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -29,9 +34,11 @@ def login():
         logger.info(f"Logging in with email: {email}")
         
         dynamo_helper_instance = dynamo_helper()
-        success, message = dynamo_helper_instance.query_login(email, password, 'login')
+        success, message, user_name = dynamo_helper_instance.query_login(email, password, 'login')
         
         if success:
+            user["email"] = email
+            user["user_name"] = user_name
             session['logged_in'] = True  
             return redirect(url_for('main_page'))
         else:
@@ -63,7 +70,9 @@ def register():
 def main_page():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    return render_template('main.html')
+    
+    subscriptions["subbed_music"] = dynamo_helper_instance.get_subbed_music(user.get('email'))
+    return render_template('main.html', user=user, subscriptions=subscriptions)
 
 @app.route('/main-query-music', methods=['GET', 'POST'])
 def main_query_music():
@@ -83,6 +92,7 @@ def main_query_music():
 def subscribe():
     logger.info("Subscribing to music")
     data = request.json
+    email = user.get('email')
     subscriptions["subbed_music"].append({
         "Title": data.get('title'),
         "Artist": data.get('artist'),
@@ -92,6 +102,11 @@ def subscribe():
     
     logger.info(f"Subscribed to {data.get('title')} by {data.get('artist')} released in {data.get('year')}")
     logger.info(subscriptions)
+    logger.info(email)
+    music = dynamo_helper_instance.add_subbed_music(subscriptions, email)
+    subscriptions["subbed_music"] = music
+    logger.info(f"Subscribed music: {music}")
+
     return jsonify({"message": "Subscription added"}), 200
 
 @app.route('/generate-presigned-url', methods=['GET'])
@@ -110,6 +125,18 @@ def generate_presigned_url():
     
     return jsonify({'url': response}), 200
 
+@app.route('/remove-subscription', methods=['POST'])
+def remove_subscription():
+    logger.info("Removing subscription")
+    data = request.json
+    email = user.get('email')
+    title = data.get('title')
+    artist = data.get('artist')
+    year = data.get('year')
+    subscriptions["subbed_music"] = dynamo_helper_instance.remove_subbed_music(title, artist, year, email)
+    logger.info(f"Removed subscription: {title} by {artist} released in {year}")
+    logger.info(subscriptions)
+    return jsonify({"message": "Subscription removed"}), 200
 
 
 if __name__ == '__main__':

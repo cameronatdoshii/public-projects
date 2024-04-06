@@ -84,11 +84,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         })
                         .then(subscriptionData => {
                             console.log('Subscription successful', subscriptionData);
-                            // Here you could update the UI to reflect the subscription
                         })
                         .catch(error => {
                             console.error('Error subscribing:', error);
-                            // Here you could display an error message to the user
                         });
                     });
                 });
@@ -100,6 +98,33 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(error => {
             console.error('Error during fetch or processing:', error);
             resultsArea.innerHTML = 'Failed to load results.';
+        });
+    });
+    document.querySelectorAll('.remove-subscription').forEach(button => {
+        button.addEventListener('click', function() {
+            const parentItem = this.closest('.subscription-item');
+            if (parentItem) {
+                parentItem.style.display = 'none';
+
+                const title = parentItem.querySelector('p:first-child').textContent.split(': ')[1];
+                const artist = parentItem.querySelector('p:nth-child(2)').textContent.split(': ')[1];
+                const year = parentItem.querySelector('p:nth-child(3)').textContent.split(': ')[1];
+
+                fetch('/remove-subscription', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        artist: artist,
+                        year: year
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+            }
         });
     });
 });

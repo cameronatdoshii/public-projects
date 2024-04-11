@@ -46,11 +46,16 @@ document.addEventListener('DOMContentLoaded', function () {
                             // Now you have a presigned URL that you can use in the img src attribute
                             songBox.querySelector('img').src = data.url;
                         } else {
-                            // Handle the absence of the URL in the response
+                            imgElement.src = 'path/to/default/image.jpg'; // Fallback image path
+                            console.log('Presigned URL not found, using fallback image.');
                         }
                     })
                     .catch(error => {
-                        // Handle errors
+                        console.error('Error fetching the presigned URL:', error);
+                        const imgElement = document.createElement('img');
+                        imgElement.src = 'path/to/default/image.jpg'; // Fallback image path
+                        imgElement.alt = 'Default Image';
+                        songBox.appendChild(imgElement);
                     });
                     songBox.className = 'song-item';
                     songBox.innerHTML = `
@@ -84,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         })
                         .then(subscriptionData => {
                             console.log('Subscription successful', subscriptionData);
+                            window.location.reload();
                         })
                         .catch(error => {
                             console.error('Error subscribing:', error);

@@ -123,6 +123,10 @@ def generate_presigned_url():
     s3_helper_instance = s3_helper()
     response = s3_helper_instance.generate_presigned_url(bucket_name, path, expiration)
     
+    if not response:
+        logger.error(f"Failed to generate presigned URL for path: {path}")
+        return jsonify({'error': 'Failed to generate presigned URL'}), 500
+
     return jsonify({'url': response}), 200
 
 @app.route('/remove-subscription', methods=['POST'])
@@ -140,4 +144,4 @@ def remove_subscription():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=7000)
+    app.run(host='0.0.0.0', port=7070)

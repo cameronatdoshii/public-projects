@@ -2,6 +2,7 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 import logging
 import ast
+import json
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -9,8 +10,9 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 class dynamo_helper:
-    def __init__(self):
-        self.dynamodb = boto3.resource('dynamodb')
+    def __init__(self, profile_name='default'):
+        session = boto3.Session(profile_name=profile_name)
+        self.dynamodb = session.resource('dynamodb')
 
     def query_login(self, email, password, table_name):
         table = self.dynamodb.Table(table_name)
@@ -70,14 +72,26 @@ class dynamo_helper:
         table = self.dynamodb.Table('login')
         response = table.get_item(Key={'email': email})
         logger.info(f"Response: {response}")
+        
+        # Parse the string into a list of dictionaries (assuming subbed_music is stored as a string).
         current_music = ast.literal_eval(response['Item']['subbed_music'])
-        current_music = [m for m in current_music if m['Title'] != title and m['Artist'] != artist and m['Year'] != year]
+
+        # Update the condition to correctly identify the item to remove
+        current_music = [
+            m for m in current_music 
+            if not (m['Title'] == title and m['Artist'] == artist and m['Year'] == year)
+        ]
+
+        # Convert the list back to a string to store in DynamoDB
+        music_str = json.dumps(current_music)
+
         response = table.update_item(
             Key={'email': email},
             UpdateExpression='SET subbed_music = :val1',
-            ExpressionAttributeValues={':val1': str(current_music)}
+            ExpressionAttributeValues={':val1': music_str}
         )
         return current_music
+
         
     def get_subbed_music(self, email):
         table = self.dynamodb.Table('login')

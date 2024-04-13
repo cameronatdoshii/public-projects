@@ -10,9 +10,15 @@ logging.basicConfig(level=logging.INFO,
 
 logger = logging.getLogger(__name__)
 
-def create_bucket(bucket_name, region=None):
+def get_boto3_session(profile_name=None):
+    # Create a session using a specific profile
+    session = boto3.Session(profile_name=profile_name) if profile_name else boto3.Session()
+    return session
+
+def create_bucket(bucket_name, region=None, profile_name=None):
     try:
-        s3_client = boto3.client('s3', region_name=region) if region else boto3.client('s3')
+        session = get_boto3_session(profile_name)
+        s3_client = session.client('s3', region_name=region) if region else session.client('s3')
         if region and region != 'us-east-1':
             s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': region})
         else:
@@ -23,9 +29,9 @@ def create_bucket(bucket_name, region=None):
         return False
     return True
 
-
-def check_bucket_exists(bucket_name):
-    s3 = boto3.resource('s3')
+def check_bucket_exists(bucket_name, profile_name=None):
+    session = get_boto3_session(profile_name)
+    s3 = session.resource('s3')
     try:
         s3.meta.client.head_bucket(Bucket=bucket_name)
         logger.info(f"Bucket {bucket_name} exists")
@@ -34,22 +40,21 @@ def check_bucket_exists(bucket_name):
         logger.error(f"Bucket {bucket_name} does not exist: {e}")
         return False
 
-    
-def check_file_exists(bucket_name, file_name):
-    s3_client = boto3.client('s3')
+def check_file_exists(bucket_name, file_name, profile_name=None):
+    session = get_boto3_session(profile_name)
+    s3_client = session.client('s3')
     try:
         s3_client.head_object(Bucket=bucket_name, Key=file_name)
         return True  # The file exists
     except Exception as e:
-        if e.response and e.response['Error']['Code'] == '404':
+        if 'Error' in e.response and e.response['Error']['Code'] == '404':
             return False  # The file does not exist
         else:
             raise  # Raise other exceptions
 
-
-
-def download_images(bucket_name):
-    s3 = boto3.client('s3')
+def download_images(bucket_name, profile_name=None):
+    session = get_boto3_session(profile_name)
+    s3 = session.client('s3')
 
     with open('a1.json') as file:
         music = json.load(file)["songs"]
@@ -59,12 +64,10 @@ def download_images(bucket_name):
         response = requests.get(img_url, stream=True)
 
         if response.status_code == 200:
-            file_location = f"images/{song['artist']}/{song['year']}/{song['title'].replace(' ', '_')}.jpg"
-            
-            # Create the directory if it doesn't exist
+            file_location = f"images/{song['artist'].replace(' ', '_')}.jpg"
             os.makedirs(os.path.dirname(file_location), exist_ok=True)
 
-            if not check_file_exists(bucket_name, file_location):
+            if not check_file_exists(bucket_name, file_location, profile_name):
                 with closing(response), open(file_location, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=1024):
                         if chunk:
@@ -79,10 +82,11 @@ def download_images(bucket_name):
             logger.error(f"Failed to download {song['title']} image from the web")
 
 def main():
+    profile_name = 'default'  # Specify the AWS profile name here
     bucket_name = 's3864826-a1-music-image-bucket'
-    region = 'us-east-1'  # Specify your region
-    if not check_bucket_exists(bucket_name):
-        if create_bucket(bucket_name, region):
+    region = 'us-east-1'
+    if not check_bucket_exists(bucket_name, profile_name):
+        if create_bucket(bucket_name, region, profile_name):
             logger.info(f"Bucket {bucket_name} created successfully.")
         else:
             logger.error(f"Failed to create bucket {bucket_name}.")
@@ -90,8 +94,7 @@ def main():
     else:
         logger.info(f"Bucket {bucket_name} already exists.")
 
-    download_images(bucket_name)
-
+    download_images(bucket_name, profile_name)
 
 if __name__ == '__main__':
     main()

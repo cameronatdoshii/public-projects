@@ -84,7 +84,7 @@ def main_query_music():
         year = request.form.get('year', '')
 
         response = dynamo_helper_instance.query_music(title, artist, year)
-        return jsonify(response)  # Send the response back as JSON
+        return jsonify(response)
     else:
         return render_template('main.html')
     
@@ -99,6 +99,8 @@ def subscribe():
         "Year": data.get('year'),
         "ImagePath": data.get('imagePath')
     })
+    
+    logger.info(f"###########HERE IS THE FUCKING IMAGE TITLE FAG {data.get('imagePath')}")
     
     logger.info(f"Subscribed to {data.get('title')} by {data.get('artist')} released in {data.get('year')}")
     logger.info(subscriptions)
@@ -144,4 +146,4 @@ def remove_subscription():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=7070)
+    app.run(host='0.0.0.0', port=80)

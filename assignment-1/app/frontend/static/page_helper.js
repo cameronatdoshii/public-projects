@@ -28,72 +28,63 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             resultsArea.innerHTML = '';
 
-            // Adjust the conditional check for both direct array or object with Items array
             let items = Array.isArray(data) ? data : data.Items;
             if (items && items.length > 0) {
                 items.forEach((song, index) => {
                     const songBox = document.createElement('div');
-                    const imageName = `${encodeURIComponent(song.title.replace(/\s+/g, '_'))}.jpg`;
                     const artist = encodeURIComponent(song.artist.replace(/\s+/g, '_'));
-                    const year = song.year;
-                    const title = encodeURIComponent(song.title.replace(/\s+/g, '_'));
-                    const imagePath = `images/${artist}/${year}/${title}.jpg`;
+                    const imagePath = `images/${artist}.jpg`;
 
                     fetch(`/generate-presigned-url?path=${imagePath}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.url) {
-                            // Now you have a presigned URL that you can use in the img src attribute
-                            songBox.querySelector('img').src = data.url;
+                            songBox.innerHTML = `
+                                <p>Title: ${song.title}</p>
+                                <p>Artist: ${song.artist}</p>
+                                <p>Year: ${song.year}</p>
+                                <img src="${data.url}" alt="${song.artist} Image">
+                                <p>Image Path: ${data.url}</p>
+                                <button id="subscribe-${index}" class="subscribe-button">Subscribe</button>
+                            `;
+                            songBox.className = 'song-item';
+                            resultsArea.appendChild(songBox);
+
+                            const subscribeButton = document.getElementById(`subscribe-${index}`);
+                            subscribeButton.addEventListener('click', function() {
+                                fetch('/main-music-subscribe', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        title: song.title,
+                                        artist: song.artist,
+                                        year: song.year,
+                                        imagePath: data.url  // Use the presigned URL here
+                                    }),
+                                })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP error! status: ${response.status}`);
+                                    }
+                                    return response.json();
+                                })
+                                .then(subscriptionData => {
+                                    console.log('Subscription successful', subscriptionData);
+                                    window.location.reload();
+                                })
+                                .catch(error => {
+                                    console.error('Error subscribing:', error);
+                                });
+                            });
                         } else {
-                            imgElement.src = 'path/to/default/image.jpg'; // Fallback image path
-                            console.log('Presigned URL not found, using fallback image.');
+                            console.error('Presigned URL not found, using fallback image.');
+                            // Handle cases where presigned URL is not available
                         }
                     })
                     .catch(error => {
                         console.error('Error fetching the presigned URL:', error);
-                        const imgElement = document.createElement('img');
-                        imgElement.src = 'path/to/default/image.jpg'; // Fallback image path
-                        imgElement.alt = 'Default Image';
-                        songBox.appendChild(imgElement);
-                    });
-                    songBox.className = 'song-item';
-                    songBox.innerHTML = `
-                        <p>Title: ${song.title}</p>
-                        <p>Artist: ${song.artist}</p>
-                        <p>Year: ${song.year}</p>
-                        <img src="https://s3864826-a1-music-image-bucket.s3.amazonaws.com/images/${encodeURIComponent(song.artist)}/${song.year}/${imageName}" alt="${song.artist} Image">
-                        <button id="subscribe-${index}" class="subscribe-button">Subscribe</button>
-                    `;
-                    resultsArea.appendChild(songBox);
-
-                    const subscribeButton = document.getElementById(`subscribe-${index}`);
-                    subscribeButton.addEventListener('click', function() {
-                        fetch('/main-music-subscribe', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                title: song.title,
-                                artist: song.artist,
-                                year: song.year,
-                                imagePath: song.img_url
-                            }),
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(subscriptionData => {
-                            console.log('Subscription successful', subscriptionData);
-                            window.location.reload();
-                        })
-                        .catch(error => {
-                            console.error('Error subscribing:', error);
-                        });
                     });
                 });
             } else {
@@ -106,6 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
             resultsArea.innerHTML = 'Failed to load results.';
         });
     });
+
     document.querySelectorAll('.remove-subscription').forEach(button => {
         button.addEventListener('click', function() {
             const parentItem = this.closest('.subscription-item');

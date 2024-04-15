@@ -19,7 +19,7 @@
                 <p>Artist: {{ music['Artist'] }}</p>
                 <p>Year: {{ music['Year'] }}</p>
                 <img src="{{ music['ImagePath'] }}" alt="Artist Image">
-                <p>Image Path: {{ music['ImagePath'] }}</p>  <!-- Displaying image path below the image -->
+                <!--<p>Image Path: {{ music['ImagePath'] }}</p>   Displaying image path below the image -->
                 <button class="remove-subscription" data-index="{{ loop.index }}">Remove</button>
             </div>
         {% else %}

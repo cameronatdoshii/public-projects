@@ -11,7 +11,6 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 def get_boto3_session(profile_name=None):
-    # Create a session using a specific profile
     session = boto3.Session(profile_name=profile_name) if profile_name else boto3.Session()
     return session
 
@@ -45,12 +44,12 @@ def check_file_exists(bucket_name, file_name, profile_name=None):
     s3_client = session.client('s3')
     try:
         s3_client.head_object(Bucket=bucket_name, Key=file_name)
-        return True  # The file exists
+        return True 
     except Exception as e:
         if 'Error' in e.response and e.response['Error']['Code'] == '404':
-            return False  # The file does not exist
+            return False 
         else:
-            raise  # Raise other exceptions
+            raise 
 
 def download_images(bucket_name, profile_name=None):
     session = get_boto3_session(profile_name)
@@ -82,7 +81,7 @@ def download_images(bucket_name, profile_name=None):
             logger.error(f"Failed to download {song['title']} image from the web")
 
 def main():
-    profile_name = 'default'  # Specify the AWS profile name here
+    profile_name = 'default'  
     bucket_name = 's3864826-a1-music-image-bucket'
     region = 'us-east-1'
     if not check_bucket_exists(bucket_name, profile_name):

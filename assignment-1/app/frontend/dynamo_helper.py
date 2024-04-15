@@ -73,16 +73,13 @@ class dynamo_helper:
         response = table.get_item(Key={'email': email})
         logger.info(f"Response: {response}")
         
-        # Parse the string into a list of dictionaries (assuming subbed_music is stored as a string).
         current_music = ast.literal_eval(response['Item']['subbed_music'])
 
-        # Update the condition to correctly identify the item to remove
         current_music = [
             m for m in current_music 
             if not (m['Title'] == title and m['Artist'] == artist and m['Year'] == year)
         ]
 
-        # Convert the list back to a string to store in DynamoDB
         music_str = json.dumps(current_music)
 
         response = table.update_item(
@@ -110,10 +107,8 @@ class dynamo_helper:
             current_music = ast.literal_eval(current_music)
             new_music = new_subbed['subbed_music']
             
-            # Convert list of dictionaries to a list of tuples for comparison
             existing_music_set = {tuple(music.items()) for music in current_music}
 
-            # Add new music if it's not already in the set
             for music in new_music:
                 if tuple(music.items()) not in existing_music_set:
                     current_music.append(music)

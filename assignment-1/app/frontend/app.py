@@ -58,15 +58,15 @@ def register():
         password = request.form['password']
 
         dynamo_helper_instance = dynamo_helper()
-        response = dynamo_helper_instance.add_user(email, user_name, password, 'login')
+        success, response = dynamo_helper_instance.add_user(email, user_name, password, 'login')
 
-        if 'error' in response:
+        if not success:
             return render_template('register.html', error=response['error'])
         else:
             return redirect(url_for('login'))
     return render_template('register.html')
 
-@app.route('/main')
+@app.route('/')
 def main_page():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
@@ -99,9 +99,6 @@ def subscribe():
         "Year": data.get('year'),
         "ImagePath": data.get('imagePath')
     })
-    
-    logger.info(f"###########HERE IS THE FUCKING IMAGE TITLE FAG {data.get('imagePath')}")
-    
     logger.info(f"Subscribed to {data.get('title')} by {data.get('artist')} released in {data.get('year')}")
     logger.info(subscriptions)
     logger.info(email)
@@ -146,4 +143,4 @@ def remove_subscription():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=80) #this is updated on the server to app.run()

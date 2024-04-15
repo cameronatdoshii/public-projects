@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <p>Artist: ${song.artist}</p>
                                 <p>Year: ${song.year}</p>
                                 <img src="${data.url}" alt="${song.artist} Image">
-                                <p>Image Path: ${data.url}</p>
                                 <button id="subscribe-${index}" class="subscribe-button">Subscribe</button>
                             `;
                             songBox.className = 'song-item';
@@ -61,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         title: song.title,
                                         artist: song.artist,
                                         year: song.year,
-                                        imagePath: data.url  // Use the presigned URL here
+                                        imagePath: data.url 
                                     }),
                                 })
                                 .then(response => {
@@ -80,7 +79,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             });
                         } else {
                             console.error('Presigned URL not found, using fallback image.');
-                            // Handle cases where presigned URL is not available
                         }
                     })
                     .catch(error => {
